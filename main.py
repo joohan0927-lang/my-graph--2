@@ -109,68 +109,49 @@ st.text_area(
     placeholder="예: ○○ 장르에서는 ○○ 영화가 가장 많은 관객을 모았다.",
     label_visibility="collapsed",
 )
-# --------------------------------------------------
-# 3. 총 관객 수 분포 히스토그램
-# --------------------------------------------------
-st.subheader("3. 총 관객 수의 분포")
+# ── 그래프 3. 총 관객의 분포 (히스토그램) ──
+st.header("3. 총 관객의 분포 (히스토그램)")
 
-fig = px.histogram(
+df["total_audi"] = pd.to_numeric(df["total_audi"], errors="coerce")
+
+fig3 = px.histogram(
     df,
     x="total_audi",
-    nbins=20,
-    title="영화별 총 관객 수 분포",
-    labels={
-        "total_audi": "총 관객 수",
-        "count": "영화 편수",
-    },
+    nbins=40,
+    labels={"total_audi": "총 관객 수"},
 )
 
-fig.update_traces(
-    hovertemplate=(
-        "총 관객 구간: %{x}<br>"
-        "영화 편수: %{y}편"
-        "<extra></extra>"
-    )
-)
-
-fig.update_layout(
+fig3.update_layout(
     xaxis_title="총 관객 수",
     yaxis_title="영화 편수",
-    margin=dict(t=60, b=20, l=20, r=20),
 )
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig3, width="stretch")
 
+# 히스토그램과 같은 40개 구간으로 가장 많이 몰린 구간 계산
+valid_audi = df["total_audi"].dropna()
 
-# 가장 많은 영화가 들어 있는 구간 계산
-counts, bin_edges = pd.np.histogram(
-    df["total_audi"],
-    bins=20,
-)
+counts, bin_edges = np.histogram(valid_audi, bins=40)
 
-max_bin_index = counts.argmax()
-bin_start = bin_edges[max_bin_index]
-bin_end = bin_edges[max_bin_index + 1]
+max_bin = counts.argmax()
+bin_start = bin_edges[max_bin]
+bin_end = bin_edges[max_bin + 1]
 
-# 총 관객이 가장 많은 영화
-max_audi_index = df["total_audi"].idxmax()
-max_audi_movie = df.loc[max_audi_index, "movieNm"]
-max_audi = df.loc[max_audi_index, "total_audi"]
-
-
-st.divider()
-
-st.markdown("### 이 그래프로 알 수 있는 것")
+# 가장 관객이 많은 영화
+best = df.loc[df["total_audi"].idxmax()]
 
 st.write(
     f"대부분의 영화는 **{bin_start:,.0f}명 ~ {bin_end:,.0f}명** "
-    f"구간에 몰려 있습니다."
+    f"구간에 가장 많이 몰려 있습니다. "
+    f"가장 많이 본 영화는 **{best['movieNm']}**"
+    f"({best['total_audi']:,.0f}명)입니다."
 )
 
-st.write(
-    f"총 관객이 가장 많은 영화는 **{max_audi_movie}**로, "
-    f"총 **{max_audi:,.0f}명**의 관객을 기록했습니다."
+st.caption(
+    "이 그래프로 알 수 있는 것: 영화별 총 관객 수가 어느 구간에 집중되어 있는지와 "
+    "가장 많은 관객을 기록한 영화를 함께 확인할 수 있다."
 )
+
 # --------------------------------------------------
 # 4. 개봉일 스크린 수와 총 관객의 관계
 # --------------------------------------------------
